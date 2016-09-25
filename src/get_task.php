@@ -16,17 +16,18 @@
 //Забиваем и экранируем данные
   $nickname = quotemeta($_GET['nickname']);
   // $passwd =   quotemeta($_GET['passwd']);
-  $passwd =   quotemeta(password_hash($_GET['passwd'], PASSWORD_BCRYPT));
+  $passwd =   $_GET['passwd'];
   $status =   quotemeta($_GET['status']);
   if ($status != 'group' && $status != 'user') exit("STATUS_BAD");
 //user > user_id
-  $user_id = $db->query("SELECT id FROM user WHERE nickname='$nickname' AND passwd='$passwd'")->fetch_assoc()['id'];
-  if ($user_id == null) exit("NICKNAME_BAD");
+  $res = $db->query("SELECT id, passwd FROM user WHERE nickname='$nickname'")->fetch_assoc();
+  if ($res['id'] == null) exit("NICKNAME_BAD");
+  if (!password_verify($passwd, $res['passwd'])) exit("PASSWD_BAD");
 //Если запрос из профиля, то выбираем данные с название группы и названием задания (Gang|Task)
   if ($status == 'user')
-    foreach ($db->query("SELECT gang_id FROM user_gang WHERE user_id=$user_id") as $row) {
+    foreach ($db->query("SELECT gang_id FROM user_gang WHERE user_id='$res['id']'") as $row) {
       $id = $row['gang_id'];
-      $elem = $db->query("SELECT gang.title AS Gang, task.title AS Task
+      $elem = $db->query("SELECT gang.title AS Gang, task.title AS Task, task.coins AS Coins, task.xp AS XP
         FROM gang
         INNER JOIN gang_task
           ON gang.id = gang_task.gang_id AND gang.id = '$id'
@@ -46,7 +47,7 @@
       INNER JOIN user_gang
         ON gang.id = user_gang.gang_id AND gang.title = '$title'
       RIGHT JOIN user
-        ON user_gang.user_id = '$user_id'")->fetch_assoc()['id'];
+        ON user_gang.user_id = $res['id']")->fetch_assoc()['id'];
     // echo $gang_id;
     $elem = $db->query("SELECT task.id,task.title,task.description, task.xp, task.coins
       FROM task

@@ -14,17 +14,20 @@
   if (!isset($_GET["passwd"]))      exit("PASSWD_NULL");
   if (!isset($_GET["group_title"])) exit("TITLE_NULL");
   if (!isset($_GET["action"]))      exit("ACTION_NULL");
+
 //Забиваем и экранируем данные
   $nickname =    quotemeta($_GET['nickname']);
-  $passwd =      quotemeta(password_hash($_GET['passwd'], PASSWORD_BCRYPT));
+  $passwd =      $_GET['passwd'];
   $group_title = quotemeta($_GET['group_title']);
   $action =      quotemeta($_GET['action']);
+
   if ($action != 'edit' && $action != 'leave' && $action != 'destroy') exit("ACTION_BAD");
   //Пользователь не может выйти из глобальной группы и личной
   if ($group_title == 'Global' || $group_title == 'myself') exit("GROUP_BAD");
 //user > user_id
-  $user_id = $db->query("SELECT id FROM user WHERE nickname='$nickname' AND passwd='$passwd'")->fetch_assoc()['id'];
-  if ($user_id == null) exit("NICKNAME_BAD");
+  $res = $db->query("SELECT id, passwd FROM user WHERE nickname='$nickname'")->fetch_assoc();
+  if ($res['id'] == null) exit("NICKNAME_BAD");
+  if (!password_verify($passwd, $res['passwd'])) exit("PASSWD_BAD");
   //Берем group_id, в котором состоит пользователь
   $group_id = $db->query("SELECT gang.id
                           FROM gang

@@ -17,7 +17,10 @@
   $status = quotemeta($_GET['status']);
   if ($status != 'new' && $status != 'exist') exit("STATUS_BAD");
   $nickname = quotemeta($_GET['nickname']);
-  $passwd =   quotemeta(password_hash($_GET['passwd'], PASSWORD_BCRYPT));
+  if ($status == 'new')
+  $passwd =   quotemeta(password_hash($_GET['passwd'], PASSWORD_BCRYPT_DEFAULT_COST));
+  else
+    $passwd = $_GET['passwd'];
   if ($status == 'new' && !isset($_GET["email"]))    exit("EMAIL_NULL");
   $email = quotemeta($_GET['email']);
 
@@ -28,10 +31,10 @@
   if (isset($_GET["phone"]))      $phone = quotemeta($_GET['phone']);
 
 //Проверяем на совпадения с nickname
-  $res = $db->query("SELECT nickname FROM user WHERE nickname='$nickname'")->fetch_assoc();
+  $res = $db->query("SELECT nickname, passwd FROM user WHERE nickname='$nickname'")->fetch_assoc()['passwd'];
   if ($status == 'new' && $res != null ||
       $status == 'exist' && $res == null) exit("NICKNAME_BAD");
-
+  if ($status == 'exist' && !password_verify($passwd, $res)) exit("PASSWD_BAD");
 //Проверяем на совпадения с email
   $res = $db->query("SELECT nickname FROM user WHERE email='$email'")->fetch_assoc();
   if ($status == 'new' && $res != null) exit("EMAIL_BAD");
@@ -54,6 +57,6 @@
                 VALUES ('$user_id', '$myself_gang_id')");
   }
   $user_id = $db->query("SELECT id FROM user WHERE nickname='$nickname'")->fetch_assoc()['id'];
-  $res = $db->query("SELECT nickname, name, surname, patronymic, date_start, email, phone FROM user WHERE id = '$user_id'")->fetch_assoc();
+  $res = $db->query("SELECT nickname, name, surname, patronymic, date_start, email, phone, xp, level, coins FROM user WHERE id = '$user_id'")->fetch_assoc();
   echo json_encode($res);
 ?>
