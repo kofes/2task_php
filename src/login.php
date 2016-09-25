@@ -17,22 +17,25 @@
   $status = quotemeta($_GET['status']);
   if ($status != 'new' && $status != 'exist') exit("STATUS_BAD");
   $nickname = quotemeta($_GET['nickname']);
-  // $passwd = quotemeta($_GET['passwd']);
   $passwd =   quotemeta(password_hash($_GET['passwd'], PASSWORD_BCRYPT));
   if ($status == 'new' && !isset($_GET["email"]))    exit("EMAIL_NULL");
   $email = quotemeta($_GET['email']);
+
 //Необязательные части запроса
   if (isset($_GET["name"]))       $name = quotemeta($_GET['name']);
   if (isset($_GET["surname"]))    $surname = quotemeta($_GET['surname']);
   if (isset($_GET["patronymic"])) $patronymic = quotemeta($_GET['patronymic']);
   if (isset($_GET["phone"]))      $phone = quotemeta($_GET['phone']);
+
 //Проверяем на совпадения с nickname
   $res = $db->query("SELECT nickname FROM user WHERE nickname='$nickname'")->fetch_assoc();
   if ($status == 'new' && $res != null ||
       $status == 'exist' && $res == null) exit("NICKNAME_BAD");
+
 //Проверяем на совпадения с email
   $res = $db->query("SELECT nickname FROM user WHERE email='$email'")->fetch_assoc();
   if ($status == 'new' && $res != null) exit("EMAIL_BAD");
+
 //Если создаем новый профиль, то...
   if ($status == 'new') {
 //... делаем insert > user
@@ -50,5 +53,7 @@
     $db->query("INSERT INTO user_gang (user_id, gang_id)
                 VALUES ('$user_id', '$myself_gang_id')");
   }
-  exit("NORM");
+  $user_id = $db->query("SELECT id FROM user WHERE nickname='$nickname'")->fetch_assoc()['id'];
+  $res = $db->query("SELECT nickname, name, surname, patronymic, date_start, email, phone FROM user WHERE id = '$user_id'")->fetch_assoc();
+  echo json_encode($res);
 ?>
