@@ -26,10 +26,15 @@
   $passwd = quotemeta($_GET['passwd']);
   $group_list = quotemeta($_GET['group_list']);
 
-  $output[] = $db->query("
-    SELECT list_users.*
+  $output[] = $db->query(
+   "SELECT list_users.*
     FROM list_users
-    WHERE
-  ")->fetch_assoc();
+    INNER JOIN user_gang
+    ON user_gang.user_id = user.id
+    INNER JOIN gang
+    ON gang.id = user_gang.gang_id
+    WHERE gang.title = '$grouop_list'
+    ORDER BY title"
+  )->fetch_assoc();
   echo (json_encode($output));
 ?>
